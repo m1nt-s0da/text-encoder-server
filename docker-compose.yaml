@@ -1,0 +1,12 @@
+services:
+  labse-server:
+    build:
+      context: .
+      args:
+        - LABSE_MODEL_NAME=sentence-transformers/LaBSE
+    ports:
+      - "8000:8000"
+    environment:
+      - BATCH_SIZE=8
+    volumes:
+      - ./.var/embeddings:/encoder/embeddings:delegated
