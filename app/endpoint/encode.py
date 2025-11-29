@@ -27,6 +27,7 @@ async def encode_endpoint(request_data: EncodeRequest):
     result = {
         "attention_mask": output.attention_mask,
         "pooler_output": output.pooler_output,
+        "lengths": output.lengths,
     }
     if request_data.include_last_hidden_state:
         result["last_hidden_state"] = output.last_hidden_state

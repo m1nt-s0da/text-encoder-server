@@ -99,6 +99,7 @@ async def _encoder_loop():
                 attention_mask=attention_masks_padded[i][: len(input_ids[i])],
                 pooler_output=outputs.pooler_output[i],
                 last_hidden_state=outputs.last_hidden_state[i][: len(input_ids[i])],
+                lengths=torch.tensor(len(input_ids[i]), dtype=torch.long),
             )
             for loop, future in _encode_callbacks[sentences[i].hash]:
                 loop.call_soon_threadsafe(future.set_result, result)
@@ -113,6 +114,7 @@ class EncodeSentenceReult:
     attention_mask: torch.Tensor
     pooler_output: torch.Tensor
     last_hidden_state: torch.Tensor
+    lengths: torch.Tensor
 
 
 @dataclass
@@ -139,6 +141,7 @@ async def encode_sentence(
             attention_mask=data["attention_mask"],
             pooler_output=data["pooler_output"],
             last_hidden_state=data["last_hidden_state"],
+            lengths=torch.tensor(len(input_ids), dtype=torch.long),
         )
 
     loop = asyncio.get_event_loop()
@@ -173,6 +176,7 @@ async def encode_sentences(
                 [r.last_hidden_state for r in result], batch_first=True, padding_value=0
             )
         ),
+        lengths=torch.tensor([r.lengths.item() for r in result], dtype=torch.long),
     )
 
 
