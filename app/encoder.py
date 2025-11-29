@@ -61,6 +61,9 @@ async def _save_data(
 async def _encoder_loop():
     logger.info("Starting to load encoder...")
     model = _load_encoder_sync()
+    assert _ready_loop is not None
+    assert _ready is not None
+    _ready_loop.call_soon_threadsafe(_ready.set_result, True)
     logger.info("Encoder loaded successfully.")
     while True:
         if len(_encode_queue) == 0:
@@ -181,11 +184,16 @@ async def encode_sentences(
 
 
 _encoder_thread: Thread | None = None
+_ready: asyncio.Future | None = None
+_ready_loop: asyncio.AbstractEventLoop | None = None
 
 
 @asynccontextmanager
 async def start_encoder_loop():
-    global _encoder_thread
+    global _encoder_thread, _ready_loop, _ready
+    _ready_loop = asyncio.get_event_loop()
+    _ready = _ready_loop.create_future()
+
     if _encoder_thread is not None:
         raise RuntimeError("Encoder thread already running.")
 
@@ -198,3 +206,8 @@ async def start_encoder_loop():
         if _encoder_thread is not None:
             _encoder_thread.join(timeout=1.0)
             _encoder_thread = None
+
+
+async def check_ready():
+    assert _ready is not None
+    await _ready
